@@ -169,6 +169,9 @@ bool MapEvaluator::evaluate(const EvaluationRequest& request) {
                  << "UnknownPoints [1],TruncatedPoints [1]\n";
     output_file_ << computeReconstructionError(request);
     output_file_.close();
+
+    LOG_IF(INFO, request.verbosity >= 2) << "Evaluation written to '"
+                                         << out_file_name << "'.";
   }
 
   // Compute visualization if required.

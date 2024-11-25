@@ -93,7 +93,14 @@ void TsdfRegistrator::checkSubmapCollectionForChange(
 }
 
 std::string TsdfRegistrator::checkSubmapForChange(
-    const SubmapCollection& submaps, Submap* submap) const {
+        const SubmapCollection& submaps, Submap* submap) const {
+  if (submap->getLabel() == PanopticLabel::kBackground) {
+    submap->setChangeState(ChangeState::kPersistent);
+    std::stringstream info;
+    info << "\nSubmap " << submap->getID() << " (" << submap->getName()
+         << ") is Background.";
+    return info.str();
+  }
   // Check overlapping submaps for conflicts or matches.
   for (const Submap& other : submaps) {
     if (!other.isActive() ||
@@ -111,7 +118,8 @@ std::string TsdfRegistrator::checkSubmapForChange(
     bool submaps_match;
     if (submapsConflict(*submap, other, &submaps_match)) {
       // No conflicts allowed.
-      if (submap->getChangeState() != ChangeState::kAbsent) {
+      if (submap->getChangeState() == ChangeState::kUnobserved) {
+        // Only past submap (i.e. Unobserved) can be set to Absent.
         submap->setChangeState(ChangeState::kAbsent);
       }
       std::stringstream info;
@@ -121,11 +129,20 @@ std::string TsdfRegistrator::checkSubmapForChange(
       return info.str();
     } else if (submap->getClassID() == other.getClassID() && submaps_match) {
       // Semantically and geometrically match.
-      submap->setChangeState(ChangeState::kPersistent);
+      // submap->setChangeState(ChangeState::kPersistent);
+      if (submap->getChangeState() == ChangeState::kUnobserved) {
+        submap->setChangeState(ChangeState::kPersistent);
+      }
+      std::stringstream info;
+      info << "\nSubmap " << submap->getID() << " (" << submap->getName()
+           << ") matches with submap " << other.getID() << " ("
+           << other.getName() << ").";
+      return info.str();
     }
   }
   return "";
 }
+
 
 bool TsdfRegistrator::submapsConflict(const Submap& reference,
                                       const Submap& other,

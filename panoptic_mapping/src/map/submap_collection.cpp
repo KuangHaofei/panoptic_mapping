@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/filesystem.hpp>
+
 #include "panoptic_mapping/SubmapCollection.pb.h"
 
 namespace panoptic_mapping {
@@ -205,6 +207,30 @@ std::string SubmapCollection::checkMapFileExtension(const std::string& file) {
     return file + extension;
   }
   return file;
+}
+
+bool SubmapCollection::saveMeshToFile(const std::string& folder_path) const {
+  CHECK(!folder_path.empty());
+
+  if (!boost::filesystem::exists(folder_path.c_str())) {
+    if(!boost::filesystem::create_directory(folder_path.c_str()))
+      return false;
+  }
+
+  // TODO(py): consider make it run with multi-thread to speed up
+  for (const Submap& submap : *this) {
+    if (submap.change_state_ == ChangeState::kAbsent) {
+      continue;
+    }
+    std::string id_pad;
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(5) << submap.getID() << "_" << submap.getName() << ".ply";
+    std::string file_path = folder_path + "/" + oss.str();
+    voxblox::outputMeshLayerAsPly(file_path,
+                                  submap.getMeshLayer());
+  }
+
+  return true;
 }
 
 std::unique_ptr<SubmapCollection> SubmapCollection::clone() const {

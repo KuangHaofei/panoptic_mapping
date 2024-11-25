@@ -243,6 +243,8 @@ TrackingInfoAggregator ProjectiveIDTracker::computeTrackingData(
 
   // Make sure the meshes of all submaps are update for tracking.
   for (int submap_id : visible_submaps) {
+    LOG_IF(INFO, config_.verbosity >= 1) << " Submap " << submap_id
+      << " (" << submaps->getSubmapPtr(submap_id)->getName() << ")" << " is visible.";
     submaps->getSubmapPtr(submap_id)->updateMesh();
   }
 

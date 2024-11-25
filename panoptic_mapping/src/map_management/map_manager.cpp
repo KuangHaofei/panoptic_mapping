@@ -141,14 +141,25 @@ void MapManager::manageSubmapActivity(SubmapCollection* submaps) {
     // Try to merge the submaps.
     if (config_.merge_deactivated_submaps_if_possible) {
       for (int id : deactivated_submaps) {
+        // Check if the submap was merged.
+        if (!submaps->submapIdExists(id)) {
+          continue;
+        }
+        //LOG_IF(INFO, config_.verbosity >= 4) << " Next ID " << id;
         int merged_id;
         int current_id = id;
         while (mergeSubmapIfPossible(submaps, current_id, &merged_id)) {
+          //LOG_IF(INFO, config_.verbosity >= 4) << "Merged Submap " << current_id << " into " << merged_id;
           current_id = merged_id;
+          //LOG_IF(INFO, config_.verbosity >= 4) << "Current ID " << current_id << " Merged ID " << merged_id << " ID " << id;
         }
         if (current_id == id) {
+          //LOG_IF(INFO, config_.verbosity >= 4) << "Current ID " << current_id << " ID " << id << " Merged ID " << merged_id;
+          Submap* submap = submaps->getSubmapPtr(id);
+
           LOG_IF(INFO, config_.verbosity >= 4)
               << "Submap " << id << " was deactivated, could not be matched."
+              << " ChangState is " << changeStateToString(submap->getChangeState())
               << std::endl;
         }
       }
@@ -168,6 +179,9 @@ void MapManager::finishMapping(SubmapCollection* submaps) {
     info << pruneBlocks(&submap);
   }
   LOG_IF(INFO, config_.verbosity >= 3) << info.str();
+
+  // Perform change detection.
+  performChangeDetection(submaps);
 
   // Deactivate last submaps.
   for (Submap& submap : *submaps) {
@@ -246,9 +260,9 @@ bool MapManager::mergeSubmapIfPossible(SubmapCollection* submaps, int submap_id,
         }
         layer_manipulator_->mergeSubmapAintoB(*submap, &other);
         LOG_IF(INFO, config_.verbosity >= 4)
-            << "Merged Submap " << submap->getID() << " into " << other.getID()
-            << ".";
-        other.setChangeState(ChangeState::kPersistent);
+            << "Merged Submap " << submap->getID() << " (" << submap->getName() << ") "
+            << " into " << other.getID() << " (" << other.getName() << ").";
+        // other.setChangeState(ChangeState::kPersistent);
         submaps->removeSubmap(submap_id);
         if (merged_id) {
           *merged_id = other.getID();

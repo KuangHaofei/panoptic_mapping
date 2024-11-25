@@ -27,4 +27,11 @@
     <remap from="~pose" to="$(arg namespace)/pose" />  
   </node>
 
+    <!-- Path visualization -->
+    <!--    <node name="path_visualizer" pkg="panoptic_mapping_utils" type="path_visualizer.py" output="screen">-->
+    <!--        <remap from="~pose_in" to="$(arg namespace)/pose" />-->
+    <!--        <param name="use_arrow" value="true" />-->
+    <!--        <param name="length" value="0.5" />-->
+    <!--    </node>-->
+
 </launch>

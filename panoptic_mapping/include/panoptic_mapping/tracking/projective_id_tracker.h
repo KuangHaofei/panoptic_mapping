@@ -47,7 +47,7 @@ class ProjectiveIDTracker : public IDTrackerBase {
     // True: Compute masks by projecting the iso-surface poitns into the frame
     // and account for voxel size. False (experimental): look up each vertex of
     // the depth map in the submap.
-    bool use_approximate_rendering = true;
+    bool use_approximate_rendering = false;
 
     // Subsample the number of looked up vertices when using
     // 'use_approximate_rendering=false' by this factor squared.

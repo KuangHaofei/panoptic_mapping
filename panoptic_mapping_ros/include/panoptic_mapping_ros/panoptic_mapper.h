@@ -70,6 +70,10 @@ class PanopticMapper {
     // shutting down when finished.
     std::string save_map_path_when_finished = "";
 
+    // Set this string to automatically save the mesh to the specified file when
+    // shutting down when finished.
+    std::string save_mesh_dir_when_finished = "";
+
     // If true, display units when printing the component configs.
     bool display_config_units = true;
 
@@ -95,6 +99,9 @@ class PanopticMapper {
   void inputCallback(const ros::TimerEvent&);
 
   // Services.
+  bool saveMeshCallback(
+      panoptic_mapping_msgs::SaveLoadMap::Request& request,     // NOLINT
+      panoptic_mapping_msgs::SaveLoadMap::Response& response);  // NOLINT
   bool saveMapCallback(
       panoptic_mapping_msgs::SaveLoadMap::Request& request,     // NOLINT
       panoptic_mapping_msgs::SaveLoadMap::Response& response);  // NOLINT
@@ -120,6 +127,7 @@ class PanopticMapper {
   void finishMapping();
 
   // IO.
+  bool saveMesh(const std::string& file_path);
   bool saveMap(const std::string& file_path);
   bool loadMap(const std::string& file_path);
 
@@ -153,6 +161,7 @@ class PanopticMapper {
   ros::NodeHandle nh_private_;
 
   // Subscribers, Publishers, Services, Timers.
+  ros::ServiceServer save_mesh_srv_;
   ros::ServiceServer load_map_srv_;
   ros::ServiceServer save_map_srv_;
   ros::ServiceServer set_visualization_mode_srv_;

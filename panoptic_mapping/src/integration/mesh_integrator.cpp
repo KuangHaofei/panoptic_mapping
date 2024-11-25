@@ -78,7 +78,7 @@ void MeshIntegrator::generateMesh(bool only_mesh_updated_blocks,
   use_class_layer_ = use_class_data;
   if (!class_layer_ && use_class_layer_) {
     use_class_layer_ = false;
-    LOG(WARNING) << "Tried to use un-initialized class layer, will be ignored.";
+    // LOG(WARNING) << "Tried to use un-initialized class layer, will be ignored.";
   }
   voxblox::BlockIndexList tsdf_blocks;
   if (only_mesh_updated_blocks) {

@@ -11,6 +11,8 @@
 #include "panoptic_mapping/common/common.h"
 #include "panoptic_mapping/map/submap.h"
 
+#include <voxblox/io/mesh_ply.h>
+
 namespace panoptic_mapping {
 
 /***
@@ -43,6 +45,9 @@ class SubmapCollection {
    * @return True if the map was loaded successfully.
    */
   bool loadFromFile(const std::string& file_path, bool recompute_data = true);
+
+  // TODO(py): add comment
+  bool saveMeshToFile(const std::string& file_path) const;
 
   // Modifying the collection.
   /**
@@ -84,8 +89,8 @@ class SubmapCollection {
    *
    * @param id SubmapID to retrieve.
    */
-
   const Submap& getSubmap(int id) const;
+
   /**
    * @brief Modifying access to the requested submap. Assumes that the provided
    * id exists, if unsure use 'submapIdExists(id)' first.

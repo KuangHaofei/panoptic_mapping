@@ -3,6 +3,7 @@
 import os
 import json
 import csv
+import threading  
 
 import rospy
 from sensor_msgs.msg import Image
@@ -16,6 +17,10 @@ import tf
 from std_srvs.srv import Empty, EmptyResponse
 from panoptic_mapping_msgs.msg import DetectronLabel, DetectronLabels
 
+import sys  
+import select  
+import termios  
+import tty  
 
 class FlatDataPlayer(object):
     def __init__(self):
@@ -64,10 +69,30 @@ class FlatDataPlayer(object):
         self.times = [(x - self.times[0]) / self.play_rate for x in self.times]
         self.start_time = None
 
+        self.paused = False
+        threading.Thread(target=self.key_listener, daemon=True).start()
+
         if self.wait:
             self.start_srv = rospy.Service('~start', Empty, self.start)
         else:
             self.start(None)
+
+    def key_listener(self):
+        # Setup terminal to read single character input
+        old_settings = termios.tcgetattr(sys.stdin)  
+        try:
+            tty.setcbreak(sys.stdin.fileno())  
+            while not rospy.is_shutdown():  
+                if select.select([sys.stdin], [], [], 0)[0]:  
+                    key = sys.stdin.read(1)  
+                    if key == ' ':
+                        self.paused = not self.paused
+                        rospy.loginfo("Paused" if self.paused else "Resumed")
+                        if not self.paused:
+                            # Reset the start time to prevent time jumps when resuming
+                            self.start_time = rospy.Time.now() - rospy.Duration(self.times[self.current_index])
+        finally:
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)  
 
     def start(self, _):
         self.running = True
@@ -77,7 +102,7 @@ class FlatDataPlayer(object):
 
     def callback(self, _):
         # Check we should be publishing.
-        if not self.running:
+        if not self.running or self.paused:
             return
 
         # Check we're not done.

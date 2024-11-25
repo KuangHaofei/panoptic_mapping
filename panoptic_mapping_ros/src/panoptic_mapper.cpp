@@ -52,6 +52,7 @@ void PanopticMapper::Config::setupParamsAndPrinting() {
   setupParam("loaded_freespace_stays_active", &loaded_freespace_stays_active);
   setupParam("shutdown_when_finished", &shutdown_when_finished);
   setupParam("save_map_path_when_finished", &save_map_path_when_finished);
+  setupParam("save_mesh_dir_when_finished", &save_mesh_dir_when_finished);
   setupParam("display_config_units", &display_config_units);
   setupParam("indicate_default_values", &indicate_default_values);
 }
@@ -183,6 +184,8 @@ void PanopticMapper::setupRos() {
   input_synchronizer_->advertiseInputTopics();
 
   // Services.
+  save_mesh_srv_ = nh_private_.advertiseService(
+          "save_mesh", &PanopticMapper::saveMeshCallback, this);
   save_map_srv_ = nh_private_.advertiseService(
       "save_map", &PanopticMapper::saveMapCallback, this);
   load_map_srv_ = nh_private_.advertiseService(
@@ -231,13 +234,50 @@ void PanopticMapper::inputCallback(const ros::TimerEvent&) {
         (ros::Time::now() - last_input_).toSec() >= 3.0) {
       // No more frames, finish up.
       LOG_IF(INFO, config_.verbosity >= 1)
-          << "No more frames received for 3 seconds, shutting down.";
-      finishMapping();
-      if (!config_.save_map_path_when_finished.empty()) {
-        saveMap(config_.save_map_path_when_finished);
+          << "No more frames received for 3 seconds, waiting for command (space to continue, enter to shutdown).";
+
+      char input_char;
+      while (true) {
+        input_char = std::cin.get();
+
+        if (input_char == '\n') {
+          // Enter key pressed, shut down the program.
+          LOG_IF(INFO, config_.verbosity >= 1) << "Shutting down.";
+          finishMapping();
+          if (!config_.save_map_path_when_finished.empty()) {
+            saveMap(config_.save_map_path_when_finished);
+          }
+          if (!config_.save_mesh_dir_when_finished.empty()) {
+            saveMesh(config_.save_mesh_dir_when_finished);
+          }
+          LOG_IF(INFO, config_.verbosity >= 1) << "Finished.";
+
+          // Pause and wait for the user to press Enter
+          std::cin.get();
+
+          ros::shutdown();
+          break;
+        } else if (input_char == ' ') {
+          // Space key pressed, continue running.
+          LOG_IF(INFO, config_.verbosity >= 1) << "Continuing mapping.";
+          last_input_ = ros::Time::now();  // Reset last input time
+          break;
+        }
       }
-      LOG_IF(INFO, config_.verbosity >= 1) << "Finished.";
-      ros::shutdown();
+
+//      finishMapping();
+//      if (!config_.save_map_path_when_finished.empty()) {
+//        saveMap(config_.save_map_path_when_finished);
+//      }
+//      if (!config_.save_mesh_dir_when_finished.empty()) {
+//        saveMesh(config_.save_mesh_dir_when_finished);
+//      }
+//      LOG_IF(INFO, config_.verbosity >= 1) << "Finished.";
+//
+//      // Pause and wait for the user to press Enter
+//      std::cin.get();
+//
+//      ros::shutdown();
     }
   }
 }
@@ -326,6 +366,13 @@ void PanopticMapper::publishVisualization() {
   Timer timer("visualization");
   submap_visualizer_->visualizeAll(submaps_.get());
   planning_visualizer_->visualizeAll();
+}
+
+bool PanopticMapper::saveMesh(const std::string& folder_path) {
+  bool success = submaps_->saveMeshToFile(folder_path);
+  LOG_IF(INFO, success) << "Successfully saved " << submaps_->size()
+                        << " submaps mesh to folder '" << folder_path << "'.";
+  return success;
 }
 
 bool PanopticMapper::saveMap(const std::string& file_path) {
@@ -431,6 +478,13 @@ bool PanopticMapper::setVisualizationModeCallback(
   // Republish the visualization.
   submap_visualizer_->visualizeAll(submaps_.get());
   return success;
+}
+
+bool PanopticMapper::saveMeshCallback(
+        panoptic_mapping_msgs::SaveLoadMap::Request& request,
+        panoptic_mapping_msgs::SaveLoadMap::Response& response) {
+  response.success = saveMesh(request.file_path);
+  return response.success;
 }
 
 bool PanopticMapper::saveMapCallback(

@@ -263,7 +263,7 @@ void Submap::finishActivePeriod() {
   }
   is_active_ = false;
   // Since the submap was active just before we assume it still exists.
-  change_state_ = ChangeState::kPersistent;
+  // change_state_ = ChangeState::kPersistent;
   updateEverything();
 }
 

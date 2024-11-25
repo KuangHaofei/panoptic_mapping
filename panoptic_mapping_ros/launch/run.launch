@@ -8,9 +8,9 @@
   
   <!-- Flat Dataset args -->
   <arg name="base_path" default="/home/lukas/Documents/Datasets/flat_dataset/run1"/> 
-  <arg name="play_rate" default="5"/>  <!-- Realtime factor -->
+  <arg name="play_rate" default="0.5"/>  <!-- Realtime factor -->
   <arg name="wait_time" default="0"/>  <!-- s -->
-  <arg name="max_frames" default="1000"/> <!-- 90 -->
+  <arg name="max_frames" default="2000"/> <!-- 90 -->
   
   <!-- Rio Dataset args -->
   <arg name="data_path" default="/home/lukas/Documents/Datasets/3RScan"/> 
@@ -19,12 +19,15 @@
   <arg name="rio_play_rate" default="20"/>  <!-- Hz -->
     
   <!-- Mapper -->
-  <arg name="config" default="flat_groundtruth"/> <!-- <flat,rio>_<groundtruth,detectron>, single_tsdf -->
-  <arg name="shutdown_when_finished" default="false"/> 
-  
+  <arg name="config" default="flat_groundtruth.yaml"/> <!-- <flat,rio>_<groundtruth,detectron>, single_tsdf -->
+  <arg name="shutdown_when_finished" default="false"/>
+  <arg name="save_map_path_when_finished" default=""/>
+  <arg name="save_mesh_dir_when_finished" default=""/>
+
   <!-- Save/Load maps -->
   <arg name="load_map" default = "false"/>
   <arg name="load_file" default = "/home/lukas/Documents/PanopticMapping/Data/maps/flat/run1.panmap"/>
+  <arg name="load_submaps_conservative" default = "true"/>
 
 
 <!-- ============ Run ============ -->
@@ -36,8 +39,11 @@
   <!-- Mapper -->
   <node name="panoptic_mapper" pkg="panoptic_mapping_ros" type="panoptic_mapper_node" output="screen" required="$(arg shutdown_when_finished)">
     <!-- Config -->
-    <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config).yaml"/>
-     
+    <rosparam file="$(find panoptic_mapping_ros)/config/mapper/$(arg config)"/>
+    <param name="shutdown_when_finished" value="$(arg shutdown_when_finished)" />
+    <param name="save_map_path_when_finished" value="$(arg save_map_path_when_finished)" />
+    <param name="save_mesh_dir_when_finished" value="$(arg save_mesh_dir_when_finished)" />
+    <param name="load_submaps_conservative" value="$(arg load_submaps_conservative)" />
     <!-- Input -->
     <remap from="color_image_in" to="$(arg namespace)/color_image"/>
     <remap from="depth_image_in" to="$(arg namespace)/depth_image"/>
